@@ -349,13 +349,14 @@ class AlphaBetaPlayer(IsolationPlayer):
         if depth == 0:
             raise "depth cannot be zero"
 
-        value = float("-inf")
+        best_value = float("-inf")
         best_move = (-1,-1)
         for move in game.get_legal_moves():
-            move_score = self.min_value(game.forecast_move(move), alpha, beta, depth-1)
-            if move_score >= value:
-                value = move_score
+            value = self.min_value(game.forecast_move(move), alpha, beta, depth-1)
+            if value >= best_value:
+                best_value = value
                 best_move = move
+                alpha = max(alpha, value)
         return best_move
 
     # for min and max, we don't need to test for terminal state, because in this case having no moves IS the terminal state
@@ -369,7 +370,7 @@ class AlphaBetaPlayer(IsolationPlayer):
         value = float("-inf")
         for move in moves:
             value = max(value, self.min_value(game.forecast_move(move), a, b, depth-1))
-            if value > b:
+            if value >= b:
                 return value
             a = max(a, value)
         return value
