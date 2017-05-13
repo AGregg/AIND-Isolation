@@ -286,11 +286,11 @@ class AlphaBetaPlayer(IsolationPlayer):
         # Initialize the best move so that this function returns something
         # in case the search fails due to timeout
         best_move = (-1, -1)
-        for depth  in range(3, 20):
+        for depth  in range(3, 999999):
             try:
                 best_move = self.alphabeta(game, depth)
             except SearchTimeout:
-                pass  # Handle any actions required after timeout as needed
+                break  # Handle any actions required after timeout as needed
 
         # Return the best move from the last completed search iteration
         return best_move
@@ -357,8 +357,7 @@ class AlphaBetaPlayer(IsolationPlayer):
 
     # for min and max, we don't need to test for terminal state, because in this case having no moves IS the terminal state
     # which already causes the loop to be skipped and the worst value to be returned
-    # α is typed with alt+224, ß is typed with alt+225
-    def max_value(self, game, α, ß, depth):
+    def max_value(self, game, a, b, depth):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
         if depth == 0:
@@ -366,14 +365,14 @@ class AlphaBetaPlayer(IsolationPlayer):
         moves = game.get_legal_moves()
         value = float("-inf")
         for move in moves:
-            value = max(value, self.min_value(game.forecast_move(move), α, ß, depth-1))
-            if value > ß:
+            value = max(value, self.min_value(game.forecast_move(move), a, b, depth-1))
+            if value > b:
                 return value
-            α = max(α, value)
+            a = max(a, value)
         return value
 
 
-    def min_value(self, game, α, ß, depth):
+    def min_value(self, game, a, b, depth):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
         if depth == 0:
@@ -381,8 +380,8 @@ class AlphaBetaPlayer(IsolationPlayer):
         moves = game.get_legal_moves()
         value = float("inf")
         for move in moves:
-            value = min(value, self.max_value(game.forecast_move(move), α, ß, depth-1))
-            if value <= α:
+            value = min(value, self.max_value(game.forecast_move(move), a, b, depth-1))
+            if value <= a:
                 return value
-            ß = min(ß, value)
+            b = min(b, value)
         return value
