@@ -34,7 +34,8 @@ def custom_score(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    return len(game.get_legal_moves(player)) - len(game.get_legal_moves(game.get_opponent(player)))
+    value = len(game.get_legal_moves(player)) - len(game.get_legal_moves(game.get_opponent(player)))
+    return float(value)
 
 
 def custom_score_2(game, player):
@@ -60,7 +61,8 @@ def custom_score_2(game, player):
         The heuristic value of the current game state to the specified player.
     """
     # heuristic for closeness to center of board
-    return 18 - sum([abs(3-x)*abs(3-x) for x in game.get_player_location(player)])
+    value = 18 - sum([abs(3-x)*abs(3-x) for x in game.get_player_location(player)])
+    return float(value)
 
 
 def custom_score_3(game, player):
@@ -85,7 +87,8 @@ def custom_score_3(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    return len(game.get_legal_moves(player))
+    value = len(game.get_legal_moves(player))
+    return float(value)
 
 
 class IsolationPlayer:
