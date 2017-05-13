@@ -283,22 +283,14 @@ class AlphaBetaPlayer(IsolationPlayer):
         """
         self.time_left = time_left
 
-
-
-        # TODO: finish this function!
-        # raise NotImplementedError
-
         # Initialize the best move so that this function returns something
         # in case the search fails due to timeout
         best_move = (-1, -1)
-
-        try:
-            # The try/except block will automatically catch the exception
-            # raised when the timer is about to expire.
-            return self.alphabeta(game, self.search_depth)
-
-        except SearchTimeout:
-            pass  # Handle any actions required after timeout as needed
+        for depth  in range(3, 20):
+            try:
+                best_move = self.alphabeta(game, depth)
+            except SearchTimeout:
+                pass  # Handle any actions required after timeout as needed
 
         # Return the best move from the last completed search iteration
         return best_move
@@ -357,30 +349,40 @@ class AlphaBetaPlayer(IsolationPlayer):
         value = float("-inf")
         best_move = (-1,-1)
         for move in game.get_legal_moves():
-            move_score = self.min_value(game.forecast_move(move), depth-1)
+            move_score = self.min_value(game.forecast_move(move), alpha, beta, depth-1)
             if move_score >= value:
                 value = move_score
                 best_move = move
         return best_move
 
     # for min and max, we don't need to test for terminal state, because in this case having no moves IS the terminal state
-    def max_value(self, game, aldepth):
+    # which already causes the loop to be skipped and the worst value to be returned
+    # α is typed with alt+224, ß is typed with alt+225
+    def max_value(self, game, α, ß, depth):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
         if depth == 0:
             return self.score(game, self)
         moves = game.get_legal_moves()
-        if not moves:
-            return float("-inf")
-        return max([self.min_value(game.forecast_move(move), depth-1) for move in moves])
+        value = float("-inf")
+        for move in moves:
+            value = max(value, self.min_value(game.forecast_move(move), α, ß, depth-1))
+            if value > ß:
+                return value
+            α = max(α, value)
+        return value
 
 
-    def min_value(self, game, depth):
+    def min_value(self, game, α, ß, depth):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
         if depth == 0:
             return self.score(game, self)
         moves = game.get_legal_moves()
-        if not moves:
-            return float("inf")
-        return min([self.max_value(game.forecast_move(move), depth-1) for move in moves])
+        value = float("inf")
+        for move in moves:
+            value = min(value, self.max_value(game.forecast_move(move), α, ß, depth-1))
+            if value <= α:
+                return value
+            ß = min(ß, value)
+        return value
