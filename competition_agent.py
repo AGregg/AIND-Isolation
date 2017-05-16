@@ -33,7 +33,31 @@ def custom_score(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    raise NotImplementedError
+    player_controlled_spaces = set([game.get_player_location(player)])
+    opponent = game.get_opponent(player)
+    opponent_controlled_spaces = set([game.get_player_location(opponent)])
+    empty_spaces = set(game.get_blank_spaces())
+    directions = [(-2, -1), (-2, 1), (-1, -2), (-1, 2),
+                  (1, -2), (1, 2), (2, -1), (2, 1)]
+    break_count = 0
+    turn = opponent
+    while len(empty_spaces) > 0:
+        turn = game.get_opponent(turn)
+        if turn == player:
+            controlled_spaces = player_controlled_spaces
+        else:
+            controlled_spaces = opponent_controlled_spaces
+        for space in empty_spaces:
+            r, c = space
+            possibilities = set([(r + dr, c + dc) for dr, dc in directions])
+            if len(possibilities.intersection(controlled_spaces)) > 0:
+                controlled_spaces.add(space)
+                break_count = 0
+        empty_spaces.difference_update(controlled_spaces)
+        break_count = break_count + 1
+        if break_count > 1:
+            break
+    return (len(player_controlled_spaces) - len(opponent_controlled_spaces))
 
 
 class CustomPlayer:
@@ -93,5 +117,107 @@ class CustomPlayer:
             Board coordinates corresponding to a legal move; may return
             (-1, -1) if there are no available legal moves.
         """
-        # OPTIONAL: Finish this function!
-        raise NotImplementedError
+        self.time_left = time_left
+
+        # Initialize the best move so that this function returns something
+        # in case the search fails due to timeout
+        best_move = (-1, -1)
+        for depth  in range(1, 9999999):
+            try:
+                best_move = self.alphabeta(game, depth)
+            except SearchTimeout:
+                break  # Handle any actions required after timeout as needed
+
+        # Return the best move from the last completed search iteration
+        return best_move
+
+    def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf")):
+        """Implement depth-limited minimax search with alpha-beta pruning as
+        described in the lectures.
+
+        This should be a modified version of ALPHA-BETA-SEARCH in the AIMA text
+        https://github.com/aimacode/aima-pseudocode/blob/master/md/Alpha-Beta-Search.md
+
+        **********************************************************************
+            You MAY add additional methods to this class, or define helper
+                 functions to implement the required functionality.
+        **********************************************************************
+
+        Parameters
+        ----------
+        game : isolation.Board
+            An instance of the Isolation game `Board` class representing the
+            current game state
+
+        depth : int
+            Depth is an integer representing the maximum number of plies to
+            search in the game tree before aborting
+
+        alpha : float
+            Alpha limits the lower bound of search on minimizing layers
+
+        beta : float
+            Beta limits the upper bound of search on maximizing layers
+
+        Returns
+        -------
+        (int, int)
+            The board coordinates of the best move found in the current search;
+            (-1, -1) if there are no legal moves
+
+        Notes
+        -----
+            (1) You MUST use the `self.score()` method for board evaluation
+                to pass the project tests; you cannot call any other evaluation
+                function directly.
+
+            (2) If you use any helper functions (e.g., as shown in the AIMA
+                pseudocode) then you must copy the timer check into the top of
+                each helper function or else your agent will timeout during
+                testing.
+        """
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+
+        if depth == 0:
+            raise "depth cannot be zero"
+
+        best_value = float("-inf")
+        best_move = (-1,-1)
+        for move in game.get_legal_moves():
+            value = self.min_value(game.forecast_move(move), alpha, beta, depth-1)
+            if value >= best_value:
+                best_value = value
+                best_move = move
+                alpha = max(alpha, value)
+        return best_move
+
+    # for min and max, we don't need to test for terminal state, because in this case having no moves IS the terminal state
+    # which already causes the loop to be skipped and the worst value to be returned
+    def max_value(self, game, a, b, depth):
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+        if depth == 0:
+            return self.score(game, self)
+        moves = game.get_legal_moves()
+        value = float("-inf")
+        for move in moves:
+            value = max(value, self.min_value(game.forecast_move(move), a, b, depth-1))
+            if value >= b:
+                return value
+            a = max(a, value)
+        return value
+
+    def min_value(self, game, a, b, depth):
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+        if depth == 0:
+            return self.score(game, self)
+        moves = game.get_legal_moves()
+        value = float("inf")
+        for move in moves:
+            value = min(value, self.max_value(game.forecast_move(move), a, b, depth-1))
+            if value <= a:
+                return value
+            b = min(b, value)
+        return value
