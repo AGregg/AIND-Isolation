@@ -58,7 +58,8 @@ def custom_score(game, player):
         break_count = break_count + 1
         if break_count > 1:
             break
-    return (len(player_controlled_spaces) - len(opponent_controlled_spaces))
+    value = len(player_controlled_spaces) - len(opponent_controlled_spaces)
+    return float(value)
 
 
 def custom_score_2(game, player):
