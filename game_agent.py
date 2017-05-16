@@ -34,8 +34,31 @@ def custom_score(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    value = len(game.get_legal_moves(player)) - len(game.get_legal_moves(game.get_opponent(player)))
-    return float(value)
+    player_controlled_spaces = set([game.get_player_location(player)])
+    opponent = game.get_opponent(player)
+    opponent_controlled_spaces = set([game.get_player_location(opponent)])
+    empty_spaces = set(game.get_blank_spaces())
+    directions = [(-2, -1), (-2, 1), (-1, -2), (-1, 2),
+                  (1, -2), (1, 2), (2, -1), (2, 1)]
+    break_count = 0
+    turn = opponent
+    while len(empty_spaces) > 0:
+        turn = game.get_opponent(turn)
+        if turn == player:
+            controlled_spaces = player_controlled_spaces
+        else:
+            controlled_spaces = opponent_controlled_spaces
+        for space in empty_spaces:
+            r, c = space
+            possibilities = set([(r + dr, c + dc) for dr, dc in directions])
+            if len(possibilities.intersection(controlled_spaces)) > 0:
+                controlled_spaces.add(space)
+                break_count = 0
+        empty_spaces.difference_update(controlled_spaces)
+        break_count = break_count + 1
+        if break_count > 1:
+            break
+    return (len(player_controlled_spaces) - len(opponent_controlled_spaces))
 
 
 def custom_score_2(game, player):
@@ -60,8 +83,10 @@ def custom_score_2(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # heuristic for closeness to center of board
-    value = 18 - sum([abs(3-x)*abs(3-x) for x in game.get_player_location(player)])
+    distance_from_center = sum([(3-x)**2 for x in game.get_player_location(player)])
+    opponent_move_count = len(game.get_legal_moves(game.get_opponent(player)))
+    player_move_count = len(game.get_legal_moves(player))
+    value = player_move_count - distance_from_center/2 - opponent_move_count
     return float(value)
 
 
@@ -87,7 +112,10 @@ def custom_score_3(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    value = len(game.get_legal_moves(player))
+    distance_from_center = sum([(3-x)**2 for x in game.get_player_location(player)])
+    opponent_move_count = len(game.get_legal_moves(game.get_opponent(player)))
+    player_move_count = len(game.get_legal_moves(player))
+    value = player_move_count - distance_from_center + ((8-opponent_move_count)/2)**2
     return float(value)
 
 
@@ -289,7 +317,7 @@ class AlphaBetaPlayer(IsolationPlayer):
         # Initialize the best move so that this function returns something
         # in case the search fails due to timeout
         best_move = (-1, -1)
-        for depth  in range(3, 999999):
+        for depth  in range(1, 9999999):
             try:
                 best_move = self.alphabeta(game, depth)
             except SearchTimeout:
